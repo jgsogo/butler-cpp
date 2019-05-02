@@ -32,6 +32,7 @@ class Butler(ConanFile):
         self.requires("fmt/5.2.1@bincrafters/stable")
         self.requires("spdlog/1.3.1@bincrafters/stable")
         self.requires("boost/1.69.0@conan/stable", override=True)  # Boost 1.68 fails in Mac/Mojave
+        self.requires("libpqxx/6.4.4@bincrafters/stable")
 
     def _configure_cmake(self):
         cmake = CMake(self)
