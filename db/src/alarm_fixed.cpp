@@ -24,7 +24,7 @@ namespace db {
         }
     }
 
-    AlarmFixedManager::AlarmFixedManager(pqxx::connection& connection) : _connection(connection) {}
+    AlarmFixedManager::AlarmFixedManager(pqxx::connection &connection) : _connection(connection) {}
 
     void AlarmFixedManager::create() {
         auto result = run_query(_connection, fmt::format("SELECT to_regclass('public.{}');", table_name));
@@ -45,12 +45,12 @@ namespace db {
         auto result = run_query(_connection, fmt::format("SELECT {}, {}, {}, {} FROM {}", fields[0], fields[1], fields[2], fields[3], table_name));
         std::vector<AlarmFixed> ret;
         for (auto item: result) {
-            ret.emplace_back(std::make_tuple(item[0].as<int>(), item[1].as<int>(), item[2].as<int64_t>(), item[3].as<std::string>()));
+            ret.emplace_back(std::make_tuple(item[0].as<int>(), item[1].as<int>(), item[2].as<time_t>(), item[3].as<std::string>()));
         }
         return ret;
     }
 
-    AlarmFixed AlarmFixedManager::insert(int user_id, int64_t timestamp, const std::string& message) {
+    AlarmFixed AlarmFixedManager::insert(int user_id, time_t timestamp, const std::string& message) {
         spdlog::debug("AlarmFixedManager::insert(user_id='{}', timestamp='{}', message='{}')", user_id, timestamp, message);
         auto r = run_query(_connection, fmt::format("INSERT INTO {} ({}, {}, {}) values ('{}', '{}', '{}') RETURNING id",
                                                     table_name, fields[1], fields[2], fields[3], user_id, timestamp, message));
@@ -72,7 +72,7 @@ namespace db {
         spdlog::debug("AlarmFixedManager::remove(id='{}')", id);
         auto r = run_query(_connection, fmt::format("SELECT {}, {}, {}, {} FROM {} WHERE {}={}",
                                                     fields[0], fields[1], fields[2], fields[3], table_name, fields[0], id));
-        return AlarmFixed{r[0][0].as<int>(), r[0][1].as<int>(), r[0][2].as<__int64_t >(), r[0][3].as<std::string>()};
+        return AlarmFixed{r[0][0].as<int>(), r[0][1].as<int>(), r[0][2].as<time_t >(), r[0][3].as<std::string>()};
     }
 
 }

@@ -9,7 +9,7 @@ file(GLOB SOURCES
         )
 file(GLOB HEADERS
         include/db/user.h
-        include/db/alarm.h
+        include/db/alarm_fixed.h
         include/db/alarm_pattern.h
         include/db/database.h
         )
