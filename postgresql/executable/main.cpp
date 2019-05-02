@@ -3,7 +3,7 @@
 
 #include "spdlog/spdlog.h"
 #include "fmt/format.h"
-#include "postgresql/table_user.h"
+#include "db/database.h"
 
 
 const std::vector<std::string> postgresql_url_vars = {"PGDATABASE", "PGHOST", "PGPORT", "PGUSER", "PGPASSWORD"};
@@ -23,14 +23,17 @@ int main()
         pqxx::connection connection;
         std::cout << "Connected to " << connection.dbname() << std::endl;
 
-        postgresql::table::UserManager::remove(connection);
-        postgresql::table::UserManager::create(connection);
-        auto u1 = postgresql::table::UserManager::insert(connection, "javi", 23);
-        auto u2 = postgresql::table::UserManager::insert(connection, "laura", 42);
+        auto& database = db::Database::instance();
+        auto& user_manager = database.users();
+
+        user_manager.remove();
+        user_manager.create();
+        auto u1 = user_manager.insert("javi", 23);
+        auto u2 = user_manager.insert("laura", 42);
 
         auto list_all = [&](){
             std::cout << "List all\n";
-            auto all = postgresql::table::UserManager::all(connection);
+            auto all = user_manager.all();
             for (auto& it: all) {
                 std::cout << fmt::format(" id='{}', name='{}', chat_id='{}'\n", std::get<0>(it), std::get<1>(it), std::get<2>(it));
             }
@@ -38,13 +41,13 @@ int main()
         list_all();
 
         std::get<2>(u1) = 54;
-        postgresql::table::UserManager::update(connection, u1);
+        user_manager.update(u1);
         list_all();
 
-        postgresql::table::UserManager::remove(connection, u1);
+        user_manager.remove(u1);
         list_all();
 
-        auto uu = postgresql::table::UserManager::get(connection, std::get<0>(u2));
+        auto uu = user_manager.get(std::get<0>(u2));
         std::cout << fmt::format("GET: id='{}', name='{}', chat_id='{}'\n", std::get<0>(uu), std::get<1>(uu), std::get<2>(uu));
     }
     catch (const std::exception &e)

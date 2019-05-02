@@ -5,11 +5,13 @@ file(GLOB SOURCES
         src/postgresql.cpp
         src/table_user.cpp
         src/table_alarm.cpp
+        src/database.cpp
         )
 file(GLOB HEADERS
-        include/postgresql/postgresql.h
-        include/postgresql/table_user.h
-        include/postgresql/table_alarm.h
+        include/db/postgresql.h
+        include/db/table_user.h
+        include/db/table_alarm.h
+        include/db/database.h
         )
 
 find_package(libpqxx REQUIRED)
