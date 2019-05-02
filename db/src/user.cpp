@@ -1,5 +1,5 @@
 
-#include "db/table_user.h"
+#include "db/user.h"
 
 #include "spdlog/spdlog.h"
 #include <fmt/format.h>
@@ -7,18 +7,20 @@
 
 namespace db {
 
-    const std::string table_name = "users";
-    const std::vector<std::string> fields = {"id", "name", "chat_id"};
+    namespace {
+        const std::string table_name = "users";
+        const std::vector<std::string> fields = {"id", "name", "chat_id"};
 
-    pqxx::result run_query(pqxx::connection& connection, const std::string& query) {
-        pqxx::work work(connection);
-        try {
-            auto r = work.exec(query);
-            work.commit();
-            return r;
-        } catch (const std::exception& e) {
-            work.abort();
-            throw;
+        pqxx::result run_query(pqxx::connection &connection, const std::string &query) {
+            pqxx::work work(connection);
+            try {
+                auto r = work.exec(query);
+                work.commit();
+                return r;
+            } catch (const std::exception &e) {
+                work.abort();
+                throw;
+            }
         }
     }
 
