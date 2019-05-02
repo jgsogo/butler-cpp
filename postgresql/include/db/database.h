@@ -7,7 +7,7 @@ namespace db {
     class Database {
     public:
         static Database& instance();
-        postgresql::table::UserManager& users();
+        db::UserManager& users();
 
     protected:
         Database();

@@ -5,7 +5,7 @@
 #include <fmt/format.h>
 
 
-namespace postgresql { namespace table {
+namespace db {
 
     const std::string table_name = "users";
     const std::vector<std::string> fields = {"id", "name", "chat_id"};
@@ -72,4 +72,4 @@ namespace postgresql { namespace table {
         return User{r[0][0].as<int>(), r[0][1].as<std::string>(), r[0][2].as<int>()};
     }
 
-}}
+}

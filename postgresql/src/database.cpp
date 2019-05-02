@@ -17,8 +17,8 @@ namespace db {
         return instance;
     }
 
-    postgresql::table::UserManager& Database::users() {
-        static postgresql::table::UserManager user_manager(pImpl->_connection);
+    db::UserManager& Database::users() {
+        static db::UserManager user_manager(pImpl->_connection);
         return user_manager;
     }
 }
