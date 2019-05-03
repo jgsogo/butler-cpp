@@ -35,3 +35,4 @@
 .vscode/
 _build/
 cmake-build-debug/
+cmake-build-release/
