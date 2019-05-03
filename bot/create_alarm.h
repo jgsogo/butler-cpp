@@ -14,6 +14,7 @@ namespace bot {
         void create_recurrent(TgBot::Message::Ptr message);
 
         void on_any_message(TgBot::Message::Ptr message);
+        void on_callback_query(TgBot::CallbackQuery::Ptr query);
         void end(TgBot::Message::Ptr message);
         static void register_command(telegram::Bot&);
 
@@ -23,5 +24,6 @@ namespace bot {
     protected:
         telegram::Bot& _bot;
         std::function<void (TgBot::Message::Ptr)> _dispatch;
+        std::function<void (TgBot::CallbackQuery::Ptr)> _dispatch_query;
     };
 }

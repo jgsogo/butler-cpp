@@ -26,8 +26,11 @@ namespace bot {
             CreateAlarm& create_fixed_alarm = it->second;
 
             bot.delegate(message->chat->id, [&create_fixed_alarm](TgBot::Message::Ptr message){
-                create_fixed_alarm.on_any_message(message);
-            });
+                                                create_fixed_alarm.on_any_message(message);
+                                            },
+                                            [&create_fixed_alarm](TgBot::CallbackQuery::Ptr query){
+                                                create_fixed_alarm.on_callback_query(query);
+                                            });
             create_fixed_alarm.init(message);
 
         }, "Create a fixed alarm");
@@ -36,22 +39,22 @@ namespace bot {
     void CreateAlarm::init(TgBot::Message::Ptr message) {
         std::vector<std::vector<std::string>> options = {{"Create fixed", "Create recurrent"}, {"List alarms", back_to_main}};
         _bot.send_message(message->chat->id, "Choose option from the list below:", options);
-        _dispatch = [this](TgBot::Message::Ptr message) {
-            const std::string& input = message->text;
+        _dispatch_query = [this](TgBot::CallbackQuery::Ptr query) {
+            const std::string& input = query->data;
             if (input == "Create fixed") {
-                this->create_fixed(message);
+                this->create_fixed(query->message);
             }
             else if (input == "Create recurrent") {
-                _bot.send_message(message->chat->id, "Not implemented yet --");
+                _bot.send_message(query->message->chat->id, "Not implemented yet --");
                 // TODO: create recurrent
             }
             else if (input == "List alarms") {
-                _bot.send_message(message->chat->id, "These are all your alarms:");
+                _bot.send_message(query->message->chat->id, "These are all your alarms:");
                 // TODO: allow select + delete
             }
             else {
-                _bot.send_message(message->chat->id, "I cannot understand you, use the menus.");
-                this->init(message);
+                _bot.send_message(query->message->chat->id, "I cannot understand you, use the menus.");
+                this->init(query->message);
             }
         };
     }
@@ -72,23 +75,25 @@ namespace bot {
                     if (valid) {
                         std::vector<std::vector<std::string>> options = {{"Just create the alarm"}};
                         _bot.send_message(message->chat->id, "Write a message for this alarm (optional)", options);
-                        _dispatch = [this, date, hour](TgBot::Message::Ptr message) {
-                            std::string alarm_message = "";
-                            if (message->text != "Just create the alarm") {
-                                alarm_message = message->text;
-                            }
 
-                            const std::string& input = message->text;
-                            this->create_alarm_fixed(message->chat->id, date, hour, alarm_message);
-
+                        auto on_success = [this, chat_id=message->chat->id](){
                             std::vector<std::vector<std::string>> options = {{back_to_alarms, back_to_main}};
-                            _bot.send_message(message->chat->id, "Success! Fixed alarm created. /help", options);
-                            _dispatch = [this](TgBot::Message::Ptr message) {
-                                const std::string& input = message->text;
-                                _bot.send_message(message->chat->id, "I cannot understand you, use the menus.");
-                                this->init(message);
+                            _bot.send_message(chat_id, "Success! Fixed alarm created. /help", options);
+                            _dispatch_query = [this](TgBot::CallbackQuery::Ptr query) {
+                                _bot.send_message(query->message->chat->id, "I cannot understand you, use the menus.");
+                                this->init(query->message);
                             };
+                        };
 
+                        _dispatch = [this, date, hour, on_success](TgBot::Message::Ptr message) {
+                            this->create_alarm_fixed(message->chat->id, date, hour, message->text);
+                            on_success();
+                        };
+
+                        _dispatch_query = [this, date, hour, on_success](TgBot::CallbackQuery::Ptr query) {
+                            assert(query->data == "Just create the alarm");
+                            this->create_alarm_fixed(query->message->chat->id, date, hour, "");
+                            on_success();
                         };
                     }
                     else { // Invalid hour
@@ -106,6 +111,19 @@ namespace bot {
 
     }
 
+    void CreateAlarm::on_callback_query(TgBot::CallbackQuery::Ptr query) {
+        spdlog::info("CreateAlarm::on_callback_query(chat_id='{}', data='{}', message='{}')", query->message->chat->id, query->data, query->message->text);
+        const std::string& input = query->data;
+        if (input == back_to_alarms) {
+            this->init(query->message);
+        }
+        else if (input == back_to_main) {
+            this->end(query->message);
+        }
+        else {
+            _dispatch_query(query);
+        }
+    }
 
     void CreateAlarm::on_any_message(TgBot::Message::Ptr message) {
         spdlog::info("CreateAlarm::on_any_message(chat_id='{}', message='{}')", message->chat->id, message->text);
@@ -122,7 +140,9 @@ namespace bot {
     }
 
     void CreateAlarm::end(TgBot::Message::Ptr message) {
+        spdlog::debug("CreateAlarm::end(chat_id='{}')", message->chat->id);
         _users_creating.erase(_users_creating.find(message->chat->id));
+        _bot.send_message(message->chat->id, "Waiting for your order. /help");
         _bot.hold_back(message->chat->id);
     }
 }

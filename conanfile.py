@@ -22,7 +22,7 @@ class Butler(ConanFile):
         cppstd = compiler_cppstd or cppstd
         if cppstd:
             cppstd = int(cppstd[3:]) if 'gnu' in cppstd else int(cppstd)
-            if cppstd == 98 or cppstd < 14:
+            if cppstd == 98 or cppstd < 17:
                 raise ConanInvalidConfiguration("Requires C++ 14")
         else:
             raise RuntimeError("Provide a value for C++ standard")
