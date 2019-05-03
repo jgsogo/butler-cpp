@@ -7,7 +7,7 @@
 
 #include "telegram/bot.h"
 #include "telegram/datetime.h"
-#include "create_fixed_alarm.h"
+#include "create_alarm.h"
 
 const std::string butler_bot_token_var = "BUTLER_BOT_TOKEN";
 
