@@ -11,6 +11,7 @@ namespace telegram {
         Impl(const char* token) : _bot(token) {}
         TgBot::Bot _bot;
         std::map<std::string, std::string> _help_messages;
+        std::map<int32_t, std::function<void(TgBot::Message::Ptr message)>> _delegations;
     };
 
     Bot::Bot(const char* token) : pImpl(std::make_unique<Impl>(token)) {}
@@ -33,6 +34,10 @@ namespace telegram {
             pImpl->_bot.getApi().sendMessage(message->chat->id, ss.str());
         });
 
+        pImpl->_bot.getEvents().onAnyMessage([this](TgBot::Message::Ptr message){
+            this->on_any_message(message);
+        });
+
         spdlog::info("Launching Telegram bot");
         TgBot::TgLongPoll longPoll(pImpl->_bot);
         while (true) {
@@ -43,4 +48,34 @@ namespace telegram {
     void Bot::send_message(int32_t chat, const std::string& message) const {
         pImpl->_bot.getApi().sendMessage(chat, message);
     }
+
+    void Bot::on_any_message(TgBot::Message::Ptr message) {
+        // If it is a command, hold back control (it it was delegated
+        if (StringTools::startsWith(message->text, "/")) {
+            this->hold_back(message->chat->id);
+            return;
+        }
+
+        auto it = pImpl->_delegations.find(message->chat->id);
+        if (it != pImpl->_delegations.end()) {
+            spdlog::debug("Bot::on_any_message 'chat={}' (delegated): msg='{}'", message->chat->id, message->text);
+            it->second(message);
+            return;
+        }
+        spdlog::debug("Bot::on_any_message 'chat={}' (lost): msg='{}'", message->chat->id, message->text);
+    }
+
+    void Bot::delegate(int32_t chat, std::function<void(TgBot::Message::Ptr message)> func) {
+        spdlog::debug("Bot::delegate '{}'", chat);
+        pImpl->_delegations[chat] = std::move(func);
+    }
+
+    void Bot::hold_back(int32_t chat) {
+        spdlog::debug("Bot::hold_back '{}'", chat);
+        auto it = pImpl->_delegations.find(chat);
+        if (it != pImpl->_delegations.end()) {
+            pImpl->_delegations.erase(it);
+        }
+    }
+
 }
