@@ -79,6 +79,7 @@ namespace telegram {
     }
 
     void Bot::on_any_message(TgBot::Message::Ptr message) {
+        spdlog::debug("Bot::on_any_message(message/chat/id='{}', message='{}')", message->chat->id, message->text);
         // If it is a command, hold back control (it it was delegated
         if (StringTools::startsWith(message->text, "/")) {
             this->hold_back(message->chat->id);
@@ -96,6 +97,7 @@ namespace telegram {
     }
 
     void Bot::on_callback_query(TgBot::CallbackQuery::Ptr query) {
+        spdlog::debug("Bot::on_callback_query(query/chat/id='{}')", query->message->chat->id);
         auto it = pImpl->_delegations.find(query->message->chat->id);
         if (it != pImpl->_delegations.end()) {
             spdlog::debug("Bot::on_callback_query 'chat={}' (delegated): data='{}', msg='{}'", query->message->chat->id, query->data, query->message->text);
