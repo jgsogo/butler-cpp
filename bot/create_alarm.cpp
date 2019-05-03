@@ -8,6 +8,7 @@
 namespace bot {
     namespace {
         std::map<telegram::Bot::chat_id_t, CreateAlarm> _users_creating;
+        const std::string command = "alarms";
         const std::string back_to_alarms = "<< Back to alarms";
         const std::string back_to_main = "<< Main menu";
     }
@@ -40,8 +41,8 @@ namespace bot {
     }
 
     void CreateAlarm::register_command(telegram::Bot& bot) {
-        spdlog::info("Register command: /fixed_alarm");
-        bot.register_command("fixed_alarm", [&bot](TgBot::Message::Ptr message) {
+        spdlog::info("Register command: /{}", command);
+        bot.register_command(command, [&bot](TgBot::Message::Ptr message) {
             auto [it, inserted] = _users_creating.insert(std::make_pair(message->chat->id, CreateAlarm{bot}));
             if (!inserted) {
                 spdlog::error("CreateAlarm for 'message->chat->id' was not previously removed!");
