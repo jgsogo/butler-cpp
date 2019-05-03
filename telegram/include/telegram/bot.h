@@ -8,7 +8,7 @@
 namespace telegram {
     class Bot {
     public:
-        typedef __int64_t chat_id_t;
+        typedef decltype(TgBot::Chat::id) chat_id_t;
 
         Bot(const char* token);
         ~Bot();
@@ -19,10 +19,12 @@ namespace telegram {
         void run();
 
         void send_message(chat_id_t chat, const std::string &message) const;
-        void send_message(int32_t chat, const std::string& message, const std::vector<std::vector<std::string>>& keyboard) const;
+        void send_message(chat_id_t chat, const std::string &message,
+                          const std::vector<std::vector<std::string>> &keyboard) const;
 
-        void delegate(int32_t chat, std::function<void(TgBot::Message::Ptr message)>, std::function<void(TgBot::CallbackQuery::Ptr message)>);
-        void hold_back(int32_t chat);
+        void delegate(chat_id_t chat, std::function<void(TgBot::Message::Ptr message)> f1,
+                      std::function<void(TgBot::CallbackQuery::Ptr message)> f2);
+        void hold_back(chat_id_t chat);
 
     protected:
         void on_any_message(TgBot::Message::Ptr message);

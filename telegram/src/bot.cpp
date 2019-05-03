@@ -11,7 +11,7 @@ namespace telegram {
         Impl(const char* token) : _bot(token) {}
         TgBot::Bot _bot;
         std::map<std::string, std::string> _help_messages;
-        std::map<int32_t, std::pair<std::function<void(TgBot::Message::Ptr)>, std::function<void(TgBot::CallbackQuery::Ptr)>>> _delegations;
+        std::map<Bot::chat_id_t, std::pair<std::function<void(TgBot::Message::Ptr)>, std::function<void(TgBot::CallbackQuery::Ptr)>>> _delegations;
     };
 
     Bot::Bot(const char* token) : pImpl(std::make_unique<Impl>(token)) {}
@@ -59,7 +59,8 @@ namespace telegram {
         pImpl->_bot.getApi().sendMessage(chat, message, false, 0, std::make_shared<TgBot::ReplyKeyboardRemove>());
     }
 
-    void Bot::send_message(int32_t chat, const std::string& message, const std::vector<std::vector<std::string>>& options) const {
+    void Bot::send_message(chat_id_t chat, const std::string &message,
+                           const std::vector<std::vector<std::string>> &options) const {
         TgBot::InlineKeyboardMarkup::Ptr keyboard(new TgBot::InlineKeyboardMarkup);
         // keyboard->oneTimeKeyboard = true;
 
@@ -106,12 +107,13 @@ namespace telegram {
     }
 
 
-    void Bot::delegate(int32_t chat, std::function<void(TgBot::Message::Ptr message)> func1, std::function<void(TgBot::CallbackQuery::Ptr message)> func2) {
+    void Bot::delegate(chat_id_t chat, std::function<void(TgBot::Message::Ptr message)> f1,
+                       std::function<void(TgBot::CallbackQuery::Ptr message)> f2) {
         spdlog::debug("Bot::delegate '{}'", chat);
-        pImpl->_delegations[chat] = std::make_pair(std::move(func1), std::move(func2));
+        pImpl->_delegations[chat] = std::make_pair(std::move(f1), std::move(f2));
     }
 
-    void Bot::hold_back(int32_t chat) {
+    void Bot::hold_back(chat_id_t chat) {
         spdlog::debug("Bot::hold_back '{}'", chat);
         auto it = pImpl->_delegations.find(chat);
         if (it != pImpl->_delegations.end()) {

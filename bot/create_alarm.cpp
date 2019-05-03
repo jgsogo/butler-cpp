@@ -5,14 +5,14 @@
 
 namespace bot {
     namespace {
-        std::map<int, CreateAlarm> _users_creating;
+        std::map<telegram::Bot::chat_id_t, CreateAlarm> _users_creating;
         const std::string back_to_alarms = "<< Back to alarms";
         const std::string back_to_main = "<< Main menu";
     }
 
     CreateAlarm::CreateAlarm(telegram::Bot& bot) : _bot(bot) {};
 
-    void CreateAlarm::create_alarm_fixed(int64_t user_id, std::string date, std::string hour, std::string message) {
+    void CreateAlarm::create_alarm_fixed(telegram::Bot::chat_id_t user_id, std::string date, std::string hour, std::string message) {
         spdlog::info("CreateAlarm::create_alarm_fixed(user='{}', date='{}', hour='{}', message='{}')", user_id, date, hour, message);
     }
 
@@ -25,12 +25,12 @@ namespace bot {
             }
             CreateAlarm& create_fixed_alarm = it->second;
 
-            bot.delegate(message->chat->id, [&create_fixed_alarm](TgBot::Message::Ptr message){
-                                                create_fixed_alarm.on_any_message(message);
-                                            },
-                                            [&create_fixed_alarm](TgBot::CallbackQuery::Ptr query){
-                                                create_fixed_alarm.on_callback_query(query);
-                                            });
+            bot.delegate(message->chat->id, [&create_fixed_alarm](TgBot::Message::Ptr message) {
+                             create_fixed_alarm.on_any_message(message);
+                         },
+                         [&create_fixed_alarm](TgBot::CallbackQuery::Ptr query) {
+                             create_fixed_alarm.on_callback_query(query);
+                         });
             create_fixed_alarm.init(message);
 
         }, "Create a fixed alarm");

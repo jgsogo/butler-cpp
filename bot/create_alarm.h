@@ -19,7 +19,7 @@ namespace bot {
         static void register_command(telegram::Bot&);
 
     protected:
-        void create_alarm_fixed(int64_t user_id, std::string date, std::string hour, std::string message);
+        void create_alarm_fixed(telegram::Bot::chat_id_t user_id, std::string date, std::string hour, std::string message);
 
     protected:
         telegram::Bot& _bot;
