@@ -39,17 +39,15 @@ namespace bot {
         _dispatch = [this](TgBot::Message::Ptr message) {
             const std::string& input = message->text;
             if (input == "Create fixed") {
-
+                this->create_fixed(message);
             }
             else if (input == "Create recurrent") {
-
+                _bot.send_message(message->chat->id, "Not implemented yet --");
+                // TODO: create recurrent
             }
             else if (input == "List alarms") {
                 _bot.send_message(message->chat->id, "These are all your alarms:");
                 // TODO: allow select + delete
-            }
-            else if (input == "<< Main menu") {
-                this->end(message);
             }
             else {
                 _bot.send_message(message->chat->id, "I cannot understand you, use the menus.");
@@ -81,22 +79,14 @@ namespace bot {
                             }
 
                             const std::string& input = message->text;
-                            this->create_alarm_fixed(message->chat->id, date, hour, message->text);
+                            this->create_alarm_fixed(message->chat->id, date, hour, alarm_message);
 
-                            std::vector<std::vector<std::string>> options = {{"<< Back to alarms", "<< Main menu"}};
-                            _bot.send_message(message->chat->id, "Success! Fixed alarm created. /help");
+                            std::vector<std::vector<std::string>> options = {{back_to_alarms, back_to_main}};
+                            _bot.send_message(message->chat->id, "Success! Fixed alarm created. /help", options);
                             _dispatch = [this](TgBot::Message::Ptr message) {
                                 const std::string& input = message->text;
-                                if (input == "<< Back to alarms") {
-                                    this->init(message);
-                                }
-                                else if (input == "<< Main menu") {
-                                    this->end(message);
-                                }
-                                else {
-                                    _bot.send_message(message->chat->id, "I cannot understand you, use the menus.");
-                                    this->init(message);
-                                }
+                                _bot.send_message(message->chat->id, "I cannot understand you, use the menus.");
+                                this->init(message);
                             };
 
                         };
@@ -119,7 +109,16 @@ namespace bot {
 
     void CreateAlarm::on_any_message(TgBot::Message::Ptr message) {
         spdlog::info("CreateAlarm::on_any_message(chat_id='{}', message='{}')", message->chat->id, message->text);
-        _dispatch(message);
+        const std::string& input = message->text;
+        if (input == back_to_alarms) {
+            this->init(message);
+        }
+        else if (input == back_to_main) {
+            this->end(message);
+        }
+        else {
+            _dispatch(message);
+        }
     }
 
     void CreateAlarm::end(TgBot::Message::Ptr message) {
