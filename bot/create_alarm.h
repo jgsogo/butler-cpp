@@ -9,15 +9,15 @@ namespace bot {
     public:
         CreateAlarm(telegram::Bot&);
 
-        void init(TgBot::Message::Ptr message);
-        void list_alarms(TgBot::Message::Ptr message);
-        void create_fixed(TgBot::Message::Ptr message);
-        void create_recurrent(TgBot::Message::Ptr message);
+        void init(telegram::Bot::chat_id_t chat_id);
+        void list_alarms(telegram::Bot::chat_id_t user_id, telegram::Bot::chat_id_t chat_id);
+        void create_fixed(telegram::Bot::chat_id_t user_id, telegram::Bot::chat_id_t chat_id);
+        void create_recurrent(telegram::Bot::chat_id_t user_id, telegram::Bot::chat_id_t chat_id);
 
         void on_any_message(TgBot::Message::Ptr message);
         void on_callback_query(TgBot::CallbackQuery::Ptr query);
-        void end(TgBot::Message::Ptr message);
-        void end_task(TgBot::Message::Ptr message, const std::string&);
+        void end(telegram::Bot::chat_id_t chat_id);
+        void end_task(telegram::Bot::chat_id_t chat_id, const std::string&);
         static void register_command(telegram::Bot&);
 
     protected:

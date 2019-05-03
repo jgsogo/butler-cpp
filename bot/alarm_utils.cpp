@@ -39,8 +39,8 @@ namespace utils {
     }
 
     std::string humanize(time_t tm) {
-        char buf[sizeof "2011-10-08 07:07:09"];
-        strftime(buf, sizeof buf, "%Y-%m-%d %H:%M:%S", gmtime(&tm));
+        char buf[sizeof "2011-10-08 07:07"];
+        strftime(buf, sizeof buf, "%Y-%m-%d %H:%M", gmtime(&tm));
         return std::string(buf);
     }
 }
