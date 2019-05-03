@@ -5,19 +5,19 @@
 
 namespace bot {
     namespace {
-        std::map<int, CreateFixedAlarm> _users_creating;
+        std::map<int, CreateAlarm> _users_creating;
     }
 
-    CreateFixedAlarm::CreateFixedAlarm(telegram::Bot& bot) : _bot(bot) {};
+    CreateAlarm::CreateAlarm(telegram::Bot& bot) : _bot(bot) {};
 
-    void CreateFixedAlarm::register_command(telegram::Bot& bot) {
+    void CreateAlarm::register_command(telegram::Bot& bot) {
         spdlog::info("Register command: /fixed_alarm");
         bot.register_command("fixed_alarm", [&bot](TgBot::Message::Ptr message) {
-            auto [it, inserted] = _users_creating.insert(std::make_pair(message->chat->id, CreateFixedAlarm{bot}));
+            auto [it, inserted] = _users_creating.insert(std::make_pair(message->chat->id, CreateAlarm{bot}));
             if (!inserted) {
-                spdlog::error("CreateFixedAlarm for 'message->chat->id' was not previously removed!");
+                spdlog::error("CreateAlarm for 'message->chat->id' was not previously removed!");
             }
-            CreateFixedAlarm& create_fixed_alarm = it->second;
+            CreateAlarm& create_fixed_alarm = it->second;
 
             bot.delegate(message->chat->id, [&create_fixed_alarm](TgBot::Message::Ptr message){
                 create_fixed_alarm.on_any_message(message);
@@ -26,8 +26,8 @@ namespace bot {
         }, "Create a fixed alarm");
     }
 
-    void CreateFixedAlarm::on_any_message(TgBot::Message::Ptr message) {
-        spdlog::info("CreateFixedAlarm::on_any_message(chat_id='{}', message='{}')", message->chat->id, message->text);
+    void CreateAlarm::on_any_message(TgBot::Message::Ptr message) {
+        spdlog::info("CreateAlarm::on_any_message(chat_id='{}', message='{}')", message->chat->id, message->text);
 
         if (message->text == "end") {
             _users_creating.erase(_users_creating.find(message->chat->id));

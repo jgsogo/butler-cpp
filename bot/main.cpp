@@ -23,7 +23,7 @@ int main(int argc,char** argv) {
 
     telegram::Bot bot{token};
     telegram::commands::datetime(bot);
-    bot::CreateFixedAlarm::register_command(bot);
+    bot::CreateAlarm::register_command(bot);
 
     bot.run();
 }

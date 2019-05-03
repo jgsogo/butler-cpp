@@ -5,9 +5,9 @@
 
 
 namespace bot {
-    class CreateFixedAlarm {
+    class CreateAlarm {
     public:
-        CreateFixedAlarm(telegram::Bot&);
+        CreateAlarm(telegram::Bot&);
 
         void on_any_message(TgBot::Message::Ptr message);
 
