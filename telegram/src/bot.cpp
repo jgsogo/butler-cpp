@@ -46,7 +46,24 @@ namespace telegram {
     }
 
     void Bot::send_message(int32_t chat, const std::string& message) const {
-        pImpl->_bot.getApi().sendMessage(chat, message);
+        pImpl->_bot.getApi().sendMessage(chat, message, false, 0, std::make_shared<TgBot::ReplyKeyboardRemove>());
+    }
+
+    void Bot::send_message(int32_t chat, const std::string& message, const std::vector<std::vector<std::string>>& options) const {
+        TgBot::ReplyKeyboardMarkup::Ptr keyboard(new TgBot::ReplyKeyboardMarkup);
+        keyboard->oneTimeKeyboard = true;
+
+        for (auto& options_row: options) {
+            std::vector<TgBot::KeyboardButton::Ptr> row;
+            for (auto& options_cell: options_row) {
+                TgBot::KeyboardButton::Ptr item(new TgBot::KeyboardButton);
+                item->text = options_cell;
+                row.push_back(item);
+            }
+            keyboard->keyboard.push_back(row);
+        }
+
+        pImpl->_bot.getApi().sendMessage(chat, message, false, 0, keyboard);
     }
 
     void Bot::on_any_message(TgBot::Message::Ptr message) {

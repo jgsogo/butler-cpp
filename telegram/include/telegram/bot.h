@@ -17,6 +17,8 @@ namespace telegram {
         void run();
 
         void send_message(int32_t chat, const std::string& message) const;
+        void send_message(int32_t chat, const std::string& message, const std::vector<std::vector<std::string>>& keyboard) const;
+
         void delegate(int32_t chat, std::function<void(TgBot::Message::Ptr message)> func);
         void hold_back(int32_t chat);
 
