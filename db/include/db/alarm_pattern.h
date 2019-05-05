@@ -7,6 +7,8 @@
 namespace db {
 
     enum class DatePattern : short {EVERY_DAY, LABOUR_DAYS, FREE_DAYS, ON_WEEKDAY, ON_MONTH_DAY, ON_YEAR_DAY};
+    static std::vector<std::string> DatePatterStr = {"EVERY_DAY", "LABOUR_DAYS", "FREE_DAYS", "ON_WEEKDAY", "ON_MONTH_DAY", "ON_YEAR_DAY"};
+    DatePattern pattern_from_str(const std::string&);
     typedef std::tuple<int, int, short, time_t, time_t, time_t, std::string> AlarmPattern;  // id, user, pattern, hour, date_init, date_end, message
 
     class AlarmPatternManager {

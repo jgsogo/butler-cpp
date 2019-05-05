@@ -11,6 +11,7 @@
 
 #include "alarm_utils.h"
 #include "db/database.h"
+#include "mpd/mpd_telegram.h"
 
 const std::string butler_bot_token_var = "BUTLER_BOT_TOKEN";
 
@@ -32,8 +33,9 @@ int main(int argc,char** argv) {
 
     // Bot
     telegram::Bot bot{token};
-    telegram::commands::datetime(bot);
+    //telegram::commands::datetime(bot);
     bot::CreateAlarm::register_command(bot);
+    mpd::telegram_commands(bot);
 
     bot.run();
 }

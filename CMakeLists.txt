@@ -6,4 +6,5 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_subdirectory(telegram)
 add_subdirectory(db)
+add_subdirectory(mpd)
 add_subdirectory(bot)

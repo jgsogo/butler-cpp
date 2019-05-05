@@ -22,18 +22,40 @@ namespace bot {
         db::Database::instance().alarms_fixed().insert(user_id, timestamp, message);
     }
 
+    void CreateAlarm::db_create_alarm_recurrent(telegram::Bot::chat_id_t user_id, db::DatePattern date_pattern, std::string hour,
+                                   std::string date_end, std::string date_init, std::string message) {
+        spdlog::info("CreateAlarm::db_create_alarm_recurrent(user='{}', date_pattern='{}', hour='{}', date_end='{}', "
+                     "date_init='{}', message='{}')", user_id, db::DatePatterStr.at(static_cast<short>(date_pattern)),
+                     hour, date_end, date_init, message);
+        auto timestamp_end = utils::timestamp(date_end.empty() ? "1970-01-01" : date_end, "00:00");
+        auto timestamp_init = utils::timestamp(date_init.empty() ? "1970-01-01" : date_end, "00:00");
+        auto timestamp_hour = utils::timestamp("1970-01-01", hour);
+        db::Database::instance().alarms_pattern().insert(user_id, date_pattern, timestamp_hour, timestamp_init, timestamp_end, message);
+    }
+
     std::vector<std::string> CreateAlarm::db_list_alarms(telegram::Bot::chat_id_t user_id, int count, int init) {
-        auto all_alarms = db::Database::instance().alarms_fixed().all();  // TODO: Filter!
-        // TODO: add pattern alarms
+        auto fixed_alarms = db::Database::instance().alarms_fixed().all();  // TODO: Filter by user
+        auto recurrent_alarms = db::Database::instance().alarms_pattern().all(); // TODO: Filter by user
+
         std::vector<std::string> ret;
         int counter = 0;
-        for (auto& it: all_alarms) {
+        for (auto& it: fixed_alarms) {
             if (std::get<1>(it) != user_id) continue;
+            if (ret.size() == count) {
+                break;
+            }
             if (counter >= init) {
                 ret.push_back(fmt::format("{} {}", utils::humanize(std::get<2>(it)), std::get<3>(it)));
             }
+            ++counter;
+        }
+        for (auto& it: recurrent_alarms) {
+            if (std::get<1>(it) != user_id) continue;
             if (ret.size() == count) {
                 break;
+            }
+            if (counter >= init) {
+                ret.push_back(fmt::format("{} {} {}", utils::humanize(std::get<3>(it)), db::DatePatterStr.at(std::get<2>(it)), std::get<6>(it)));
             }
             ++counter;
         }
@@ -57,7 +79,7 @@ namespace bot {
                          });
             create_fixed_alarm.init(message->chat->id);
 
-        }, "Create a fixed alarm");
+        }, "Create alarms, fixed and recurrent");
     }
 
     void CreateAlarm::init(telegram::Bot::chat_id_t chat_id) {
@@ -69,8 +91,7 @@ namespace bot {
                 this->create_fixed(query->from->id, query->message->chat->id);
             }
             else if (input == "Create recurrent") {
-                _bot.send_message(query->message->chat->id, "Not implemented yet --");
-                // TODO: create recurrent
+                this->create_recurrent(query->from->id, query->message->chat->id);
             }
             else if (input == "List alarms") {
                 this->list_alarms(query->from->id, query->message->chat->id);
@@ -96,6 +117,7 @@ namespace bot {
     }
 
     void CreateAlarm::create_fixed(telegram::Bot::chat_id_t user_id, telegram::Bot::chat_id_t chat_id) {
+        spdlog::debug("CreateAlarm::create_fixed(user_id='{}', chat_id='{}')", user_id, chat_id);
         _bot.send_message(chat_id, "Ok. Let's create a fixed alarm");
         _bot.send_message(chat_id, "Enter a valid date (format 2019-08-12):");
         _dispatch = [this, user_id](TgBot::Message::Ptr message) {
@@ -137,7 +159,95 @@ namespace bot {
     }
 
     void CreateAlarm::create_recurrent(telegram::Bot::chat_id_t user_id, telegram::Bot::chat_id_t chat_id) {
+        spdlog::debug("CreateAlarm::create_recurrent(user_id='{}', chat_id='{}')", user_id, chat_id);
 
+        _bot.send_message(chat_id, "Ok. Let's create a recurrent alarm");
+
+        // Select recursion pattern
+        std::vector<std::vector<std::string>> options;
+        std::vector<std::string> row;
+        int i = 0;
+        for (auto& it: db::DatePatterStr) {
+            row.push_back(it);
+            if (++i % 2 == 0) {
+                options.push_back(row);
+                row.clear();
+            }
+        }
+        if (row.size()) options.push_back(row);
+        _bot.send_message(chat_id, "Select recursion:", options);
+        _dispatch_query = [this, user_id](TgBot::CallbackQuery::Ptr query) {
+            assert(user_id == query->from->id);
+            db::DatePattern date_pattern = db::pattern_from_str(query->data);
+            _bot.send_message(query->message->chat->id, "Enter a valid hour (format 18:50):");
+            _dispatch = [this, user_id, date_pattern](TgBot::Message::Ptr message) {
+                assert(user_id == message->from->id);
+                std::string hour = message->text;
+                auto valid = utils::validate_hour(hour);  // TODO: validate hour
+                if (valid) {
+                    std::vector<std::vector<std::string>> options = {{"Forever"}};
+                    _bot.send_message(message->chat->id, "Last alarm date (format 2019-08-12)?", options);
+
+                    auto on_date_end = [this, user_id, date_pattern, hour](const std::string& date_end, telegram::Bot::chat_id_t chat_id) {
+                        std::vector<std::vector<std::string>> options = {{"Today"}};
+                        _bot.send_message(chat_id, "First alarm date (format 2019-08-12)?", options);
+
+                        auto on_date_init = [this, user_id, date_pattern, hour, date_end](const std::string& date_init, telegram::Bot::chat_id_t chat_id) {
+                            std::vector<std::vector<std::string>> options = {{"Just create the alarm"}};
+                            _bot.send_message(chat_id, "Write a message for this alarm (optional)", options);
+
+                            _dispatch = [this, user_id, date_pattern, hour, date_end, date_init](TgBot::Message::Ptr message) {
+                                assert(user_id == message->from->id);
+                                this->db_create_alarm_recurrent(user_id, date_pattern, hour, date_end, date_init, message->text);
+                                this->end_task(message->chat->id, "Recurrent alarm created!");
+                            };
+
+                            _dispatch_query = [this, user_id, date_pattern, hour, date_end, date_init](TgBot::CallbackQuery::Ptr query) {
+                                assert(user_id == query->from->id);
+                                assert(query->data == "Just create the alarm");
+                                this->db_create_alarm_recurrent(user_id, date_pattern, hour, date_end, date_init, "");
+                                this->end_task(query->message->chat->id, "Recurrent alarm created!");
+                            };
+                        };
+
+                        _dispatch_query = [this, user_id, on_date_init](TgBot::CallbackQuery::Ptr query) {
+                            assert(user_id == query->from->id);
+                            on_date_init("", query->message->chat->id);
+                        };
+                        _dispatch = [this, user_id, on_date_init](TgBot::Message::Ptr message) {
+                            assert(user_id == message->from->id);
+                            std::string date_init = message->text;
+                            auto valid = utils::validate_date(date_init);
+                            if (valid) {
+                                on_date_init(date_init, message->chat->id);
+                            }
+                            else {
+                                _bot.send_message(message->chat->id, "Invalid date format, enter a valid date (format 2019-08-12):");
+                            }
+                        };
+                    };
+
+                    _dispatch_query = [this, user_id, on_date_end](TgBot::CallbackQuery::Ptr query) {
+                        assert(user_id == query->from->id);
+                        on_date_end("", query->message->chat->id);
+                    };
+                    _dispatch = [this, user_id, on_date_end](TgBot::Message::Ptr message) {
+                        assert(user_id == message->from->id);
+                        std::string date_end = message->text;
+                        auto valid = utils::validate_date(date_end);
+                        if (valid) {
+                            on_date_end(date_end, message->chat->id);
+                        }
+                        else {
+                            _bot.send_message(message->chat->id, "Invalid date format, enter a valid date (format 2019-08-12):");
+                        }
+                    };
+                }
+                else {
+                    _bot.send_message(message->chat->id, "Invalid hour format, enter a valid hour (format 18:50):");
+                }
+            };
+        };
     }
 
     void CreateAlarm::on_callback_query(TgBot::CallbackQuery::Ptr query) {

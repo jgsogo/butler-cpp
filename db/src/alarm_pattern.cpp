@@ -24,6 +24,15 @@ namespace db {
         }
     }
 
+    DatePattern pattern_from_str(const std::string& str) {
+        int i = 0;
+        for (auto& it: DatePatterStr) {
+            if (it == str) return static_cast<DatePattern>(i);
+            ++i;
+        }
+        throw std::runtime_error(fmt::format("Invalid DatePattern '{}'", str));
+    }
+
     AlarmPatternManager::AlarmPatternManager(pqxx::connection& connection) : _connection(connection) {}
 
     void AlarmPatternManager::create() {

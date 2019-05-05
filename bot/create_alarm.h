@@ -2,7 +2,7 @@
 #pragma once
 
 #include "telegram/bot.h"
-
+#include "db/database.h"
 
 namespace bot {
     class CreateAlarm {
@@ -23,6 +23,8 @@ namespace bot {
     protected:
         void db_create_alarm_fixed(telegram::Bot::chat_id_t user_id, std::string date, std::string hour,
                                    std::string message);
+        void db_create_alarm_recurrent(telegram::Bot::chat_id_t user_id, db::DatePattern date_pattern, std::string hour,
+                std::string date_end, std::string date_init, std::string message);
         std::vector<std::string> db_list_alarms(telegram::Bot::chat_id_t user_id, int count = 10, int init = 0);
 
 
