@@ -3,3 +3,8 @@ project(butler CXX)
 
 add_executable(bot main.cpp create_alarm.cpp create_alarm.h alarm_utils.h alarm_utils.cpp)
 target_link_libraries(bot PRIVATE telegram database mpd)
+
+install(TARGETS bot
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)

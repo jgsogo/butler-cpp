@@ -11,8 +11,8 @@ class Butler(ConanFile):
     description = "Common tasks for a butler (C++)"
     license = "MIT"
 
-    settings = "os", "arch", "compiler", "build_type"
-    default_options = {"tgbot_cpp:shared": False,}
+    settings = "cppstd", "os", "arch", "compiler", "build_type"
+    default_options = {"tgbot_cpp:shared": False}
     scm = {"type": "git", "url": "https://github.com/jgsogo/butler-cpp.git", "revision": "auto"}
     generators = "cmake_find_package"
 
