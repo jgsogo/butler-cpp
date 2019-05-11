@@ -12,4 +12,4 @@ target_include_directories(
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 # Add executable too
-# add_subdirectory(executable)
+add_subdirectory(executable)

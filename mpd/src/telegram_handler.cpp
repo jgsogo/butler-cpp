@@ -17,6 +17,9 @@ namespace mpd {
         const std::string play_command = "Play";
         const std::string stop_command = "Stop";
         const std::string volume_command = "Volume";
+        const std::string next_command = "Next";
+        const std::string prev_command = "Prev";
+        const std::string status_command = "Info";
     }
 
     MpdHandler::MpdHandler(telegram::Bot& bot) : _bot(bot) {};
@@ -41,8 +44,8 @@ namespace mpd {
     }
 
     void MpdHandler::init(telegram::Bot::chat_id_t chat_id) {
-        std::vector<std::vector<std::string>> options = {{play_command, stop_command}, {volume_command, back_to_main}};
-        _bot.send_message(chat_id, "Choose option from the list below:", options);
+        std::vector<std::vector<std::string>> options = {{play_command, stop_command}, {prev_command, next_command}, {status_command, volume_command}, {back_to_main}};
+        _bot.send_message(chat_id, "Choose option from the list below (/help):", options);
         _dispatch_query = [this](TgBot::CallbackQuery::Ptr query) {
             const std::string& input = query->data;
             if (input == play_command) {
@@ -53,6 +56,15 @@ namespace mpd {
             }
             else if (input == volume_command) {
                 this->volume(query->from->id, query->message->chat->id);
+            }
+            else if (input == status_command) {
+                this->status(query->from->id, query->message->chat->id);
+            }
+            else if (input == next_command) {
+                this->next(query->from->id, query->message->chat->id);
+            }
+            else if (input == prev_command) {
+                this->prev(query->from->id, query->message->chat->id);
             }
             else {
                 _bot.send_message(query->message->chat->id, "I cannot understand you, use the menus.");
@@ -97,22 +109,32 @@ namespace mpd {
     }
 
     void MpdHandler::end_task(telegram::Bot::chat_id_t chat_id, const std::string& task) {
-        std::vector<std::vector<std::string>> options = {{back_to_mpd, back_to_main}};
-        _bot.send_message(chat_id, fmt::format("{} /help", task), options);
-        _dispatch_query = [this](TgBot::CallbackQuery::Ptr query) {
-            _bot.send_message(query->message->chat->id, "I cannot understand you, use the menus.");
-            this->init(query->message->chat->id);
-        };
+        _bot.send_message(chat_id, task);
+        this->init(chat_id);
     }
 
     void MpdHandler::play(telegram::Bot::chat_id_t user_id, telegram::Bot::chat_id_t chat_id) {
         Mpd::instance().play();
-        this->end_task(chat_id, "Playing music!"); // TODO: get info about the song
+        this->end_task(chat_id, Mpd::instance().status()); // TODO: get info about the song
     }
 
     void MpdHandler::stop(telegram::Bot::chat_id_t user_id, telegram::Bot::chat_id_t chat_id) {
         Mpd::instance().stop();
-        this->end_task(chat_id, "Stop music!");
+        this->end_task(chat_id, "Stop!");
+    }
+
+    void MpdHandler::next(telegram::Bot::chat_id_t user_id, telegram::Bot::chat_id_t chat_id) {
+        Mpd::instance().next();
+        this->end_task(chat_id, Mpd::instance().status());
+    }
+
+    void MpdHandler::prev(telegram::Bot::chat_id_t user_id, telegram::Bot::chat_id_t chat_id) {
+        Mpd::instance().prev();
+        this->end_task(chat_id, Mpd::instance().status());
+    }
+
+    void MpdHandler::status(telegram::Bot::chat_id_t user_id, telegram::Bot::chat_id_t chat_id) {
+        this->end_task(chat_id, Mpd::instance().status());
     }
 
     void MpdHandler::volume(telegram::Bot::chat_id_t user_id, telegram::Bot::chat_id_t chat_id) {
@@ -122,9 +144,9 @@ namespace mpd {
         auto on_value = [this, user_id](telegram::Bot::chat_id_t chat_id, const std::string& value) {
             try
             {
-                short volume_value = boost::lexical_cast<short>(value);
+                auto volume_value = boost::lexical_cast<short>(value);
                 Mpd::instance().volume(volume_value);
-                this->end_task(chat_id, "Volume changed!");
+                this->end_task(chat_id, Mpd::instance().status());
             }
             catch(boost::bad_lexical_cast &)
             {

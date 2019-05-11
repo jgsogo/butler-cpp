@@ -12,10 +12,11 @@ namespace mpd {
         static Mpd& instance();
 
         void play();
-
         void stop();
-
         void volume(short value);
+        void next();
+        void prev();
+        std::string status();
 
     protected:
         Mpd();

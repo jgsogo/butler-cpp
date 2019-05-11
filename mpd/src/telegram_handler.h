@@ -19,6 +19,9 @@ namespace mpd {
         void play(telegram::Bot::chat_id_t user_id, telegram::Bot::chat_id_t chat_id);
         void stop(telegram::Bot::chat_id_t user_id, telegram::Bot::chat_id_t chat_id);
         void volume(telegram::Bot::chat_id_t user_id, telegram::Bot::chat_id_t chat_id);
+        void next(telegram::Bot::chat_id_t user_id, telegram::Bot::chat_id_t chat_id);
+        void prev(telegram::Bot::chat_id_t user_id, telegram::Bot::chat_id_t chat_id);
+        void status(telegram::Bot::chat_id_t user_id, telegram::Bot::chat_id_t chat_id);
 
     protected:
 
