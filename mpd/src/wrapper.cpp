@@ -133,21 +133,46 @@ namespace mpd {
 
     std::string Mpd::status() {
         spdlog::debug("Mpd::status()");
-        std::string ret;
+        std::string ret = "No song being played right now";
         run_commands(pImpl->conn, [](mpd_connection *conn){
-            mpd_send_current_song(conn);
-        },
-                [&ret](mpd_connection *conn){
-                    struct mpd_song *song;
-                    while ((song = mpd_recv_song(conn)) != NULL) {
-                        const char* artist = mpd_song_get_tag(song, MPD_TAG_ARTIST, 0);
-                        const char* album = mpd_song_get_tag(song, MPD_TAG_ALBUM, 0);
-                        const char* title = mpd_song_get_tag(song, MPD_TAG_TITLE, 0);
-                        ret = fmt::format("{} | {} ({})", artist, title, album);
-                        mpd_song_free(song);
-                    }
-        });
+                        mpd_send_current_song(conn);
+                    },
+                    [&ret](mpd_connection *conn){
+                        struct mpd_song *song;
+                        while ((song = mpd_recv_song(conn)) != NULL) {
+                            const char* artist = mpd_song_get_tag(song, MPD_TAG_ARTIST, 0);
+                            const char* album = mpd_song_get_tag(song, MPD_TAG_ALBUM, 0);
+                            const char* title = mpd_song_get_tag(song, MPD_TAG_TITLE, 0);
+                            ret = fmt::format("{} | {} ({})", artist, title, album);
+                            mpd_song_free(song);
+                        }
+                    });
         return ret;
     }
 
+    std::vector<std::string> Mpd::playlists() {
+        spdlog::debug("Mpd::playlists()");
+        std::vector<std::string> ret;
+        run_commands(pImpl->conn, [](mpd_connection *conn){
+                         mpd_send_list_playlists(conn);
+                     },
+                     [&ret](mpd_connection *conn){
+                         struct mpd_playlist *playlist;
+                         while ((playlist = mpd_recv_playlist(conn)) != NULL) {
+                             const char* it = mpd_playlist_get_path(playlist);
+                             ret.push_back(it);
+                             mpd_playlist_free(playlist);
+                         }
+                     });
+        return ret;
+    }
+
+    void Mpd::playlist(const std::string& playlist) {
+        spdlog::debug("Mdp::playlist({})", playlist);
+        run_commands(pImpl->conn, [&playlist](mpd_connection *conn){
+            mpd_send_clear(conn);
+            mpd_send_load(conn, playlist.c_str());
+            mpd_send_play(conn);
+        });
+    }
 }

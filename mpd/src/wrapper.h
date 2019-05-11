@@ -17,7 +17,8 @@ namespace mpd {
         void next();
         void prev();
         std::string status();
-
+        std::vector<std::string> playlists();
+        void playlist(const std::string&);
     protected:
         Mpd();
 

@@ -20,6 +20,7 @@ namespace mpd {
         const std::string next_command = "Next";
         const std::string prev_command = "Prev";
         const std::string status_command = "Info";
+        const std::string list_playlists_command = "Playlists";
     }
 
     MpdHandler::MpdHandler(telegram::Bot& bot) : _bot(bot) {};
@@ -44,7 +45,7 @@ namespace mpd {
     }
 
     void MpdHandler::init(telegram::Bot::chat_id_t chat_id) {
-        std::vector<std::vector<std::string>> options = {{play_command, stop_command}, {prev_command, next_command}, {status_command, volume_command}, {back_to_main}};
+        std::vector<std::vector<std::string>> options = {{play_command, stop_command}, {prev_command, next_command}, {status_command, volume_command}, {list_playlists_command, back_to_main}};
         _bot.send_message(chat_id, "Choose option from the list below (/help):", options);
         _dispatch_query = [this](TgBot::CallbackQuery::Ptr query) {
             const std::string& input = query->data;
@@ -65,6 +66,9 @@ namespace mpd {
             }
             else if (input == prev_command) {
                 this->prev(query->from->id, query->message->chat->id);
+            }
+            else if (input == list_playlists_command) {
+                this->list_playlists(query->from->id, query->message->chat->id);
             }
             else {
                 _bot.send_message(query->message->chat->id, "I cannot understand you, use the menus.");
@@ -135,6 +139,27 @@ namespace mpd {
 
     void MpdHandler::status(telegram::Bot::chat_id_t user_id, telegram::Bot::chat_id_t chat_id) {
         this->end_task(chat_id, Mpd::instance().status());
+    }
+
+    void MpdHandler::list_playlists(telegram::Bot::chat_id_t user_id, telegram::Bot::chat_id_t chat_id) {
+        auto playlists = Mpd::instance().playlists();
+        if (!playlists.empty()) {
+            std::vector<std::vector<std::string>> options;
+            for (auto &it: playlists) {
+                options.push_back({it});
+            }
+            options.push_back({back_to_mpd, back_to_main});
+            _bot.send_message(chat_id, "Playlists, select one to play:", options);
+            _dispatch_query = [this, user_id](TgBot::CallbackQuery::Ptr query) {
+                assert(user_id == query->from->id);
+                const std::string& input = query->data;
+                Mpd::instance().playlist(input);
+                this->end_task(query->message->chat->id, Mpd::instance().status());
+            };
+        }
+        else {
+            this->end_task(chat_id, "No playlists found");
+        }
     }
 
     void MpdHandler::volume(telegram::Bot::chat_id_t user_id, telegram::Bot::chat_id_t chat_id) {

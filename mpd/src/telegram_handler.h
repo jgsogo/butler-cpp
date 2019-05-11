@@ -23,6 +23,8 @@ namespace mpd {
         void prev(telegram::Bot::chat_id_t user_id, telegram::Bot::chat_id_t chat_id);
         void status(telegram::Bot::chat_id_t user_id, telegram::Bot::chat_id_t chat_id);
 
+        void list_playlists(telegram::Bot::chat_id_t user_id, telegram::Bot::chat_id_t chat_id);
+
     protected:
 
     protected:
